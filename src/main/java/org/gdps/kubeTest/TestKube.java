@@ -39,8 +39,8 @@ public class TestKube {
             ApiClient client = Config.fromCluster();
             //ApiClient client = Config.fromToken("https://api.us-west-2.online-starter.openshift.com:6443/apis/user.openshift.io/v1/users/~","Authorization: Bearer fTRF8_hYSN07rsx3M5Kh0x3VXK2u7__zZT961HcqUvE");
 
-            //ApiKeyAuth BearerToken = (ApiKeyAuth) client.getAuthentication("BearerToken");
-            //BearerToken.setApiKey("oNRbGCqK_rPKWK097baPK9mF5fA4sVA8cnISMQguNcg");
+            ApiKeyAuth BearerToken = (ApiKeyAuth) client.getAuthentication("BearerToken");
+            BearerToken.setApiKey("oNRbGCqK_rPKWK097baPK9mF5fA4sVA8cnISMQguNcg");
             //BearerToken.setApiKeyPrefix("Bearer");
 
             Configuration.setDefaultApiClient(client);
