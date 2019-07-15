@@ -2,6 +2,9 @@ package org.gdps.kubeTest;
 
 import org.springframework.boot.autoconfigure.*;
 import org.springframework.web.bind.annotation.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
@@ -18,78 +21,181 @@ import java.io.IOException;
 @RestController
 @EnableAutoConfiguration
 public class TestKube {
+    int version = 3;
 
     @RequestMapping("/")
     public String Test() {
 
-        return "Testing kube";
+        return "Testing kube " + version;
     }
 
-    @RequestMapping("/kube")
-    public String TesKube() {
+    private void Log(StringBuilder logger, String logMessage)
+    {
+        logger.append(logMessage + "\r\n");
+    }
 
-        String message = "";
+    private ApiClient getClient(StringBuilder logger) throws IOException{
+        Log(logger,"Preparing Kubernetes client");
+        //ApiClient client = Config.defaultClient();
+        //ApiClient client = Config.fromConfig("resources/kubeconfig.yaml");
+        ApiClient client = Config.fromCluster();
+        //ApiClient client = Config.fromToken("https://api.us-west-2.online-starter.openshift.com:6443/apis/user.openshift.io/v1/users/~","Authorization: Bearer fTRF8_hYSN07rsx3M5Kh0x3VXK2u7__zZT961HcqUvE");
+
+        ApiKeyAuth BearerToken = (ApiKeyAuth) client.getAuthentication("BearerToken");
+        BearerToken.setApiKey("oNRbGCqK_rPKWK097baPK9mF5fA4sVA8cnISMQguNcg");
+        //BearerToken.setApiKeyPrefix("Bearer");
+        Configuration.setDefaultApiClient(client);
+
+        return client;
+    }
+
+    @RequestMapping("/listpods")
+    public String ListPods() {
+
+        StringBuilder logger = new StringBuilder();
+        Log(logger, "Test Kube v" + version);
+
         try {
 
-            System.out.println("Preparing Kubernetes client");
-            message += "Preparing Kubernetes client";
-
-            //ApiClient client = Config.defaultClient();
-            //ApiClient client = Config.fromConfig("resources/kubeconfig.yaml");
-            ApiClient client = Config.fromCluster();
-            //ApiClient client = Config.fromToken("https://api.us-west-2.online-starter.openshift.com:6443/apis/user.openshift.io/v1/users/~","Authorization: Bearer fTRF8_hYSN07rsx3M5Kh0x3VXK2u7__zZT961HcqUvE");
-
-            ApiKeyAuth BearerToken = (ApiKeyAuth) client.getAuthentication("BearerToken");
-            BearerToken.setApiKey("oNRbGCqK_rPKWK097baPK9mF5fA4sVA8cnISMQguNcg");
-            //BearerToken.setApiKeyPrefix("Bearer");
-
-            Configuration.setDefaultApiClient(client);
+            ApiClient client = getClient(logger);
             CoreV1Api apiInstance = new CoreV1Api();
 
-            /*System.out.println("Listing authentications");
+            Log(logger,"Listing pods");
+            //V1PodList list = apiInstance.listPodForAllNamespaces(null, null, null, null, null, null, null, null, null);
+            V1PodList list = apiInstance.listNamespacedPod("krakenprj", null, null, null, null, null, null, null, null, null);
+
+            for (V1Pod item : list.getItems()) {
+                Log(logger, "Pod instance: " + item.getMetadata().getName());
+            }
+        }
+        catch (ApiException e) {
+            Log(logger,"Error API: " + e.getMessage());
+        }
+        catch (IOException e) {
+            Log(logger,"Error IO: " + e.getMessage());
+        }
+
+        return logger.toString();
+    }
+
+    @RequestMapping("/listpods2")
+    public String ListPods2() {
+
+        StringBuilder logger = new StringBuilder();
+        Log(logger, "Test Kube v" + version);
+
+        try {
+
+            ApiClient client = getClient(logger);
+            CoreV1Api apiInstance = new CoreV1Api();
+
+            Log(logger,"Listing pods");
+            //V1PodList list = apiInstance.listPodForAllNamespaces(null, null, null, null, null, null, null, null, null);
+            V1PodList list = apiInstance.listNamespacedPod("default", null, null, null, null, null, null, null, null, null);
+
+            for (V1Pod item : list.getItems()) {
+                Log(logger, "Pod instance: " + item.getMetadata().getName());
+            }
+        }
+        catch (ApiException e) {
+            Log(logger,"Error API: " + e.getMessage());
+        }
+        catch (IOException e) {
+            Log(logger,"Error IO: " + e.getMessage());
+        }
+
+        return logger.toString();
+    }
+
+    @RequestMapping("/listnamespaces")
+    public String ListNamespaces() {
+
+        StringBuilder logger = new StringBuilder();
+        Log(logger, "Test Kube v" + version);
+
+        try {
+
+            ApiClient client = getClient(logger);
+            CoreV1Api apiInstance = new CoreV1Api();
+
+            Log(logger,"Listing namespaces");
+            V1NamespaceList nslist = apiInstance.listNamespace(null, null, null, null, null, null, null, null, null);
+
+            for (V1Namespace item : nslist.getItems()) {
+                Log(logger, "Namespace: " + item.getMetadata().getName());
+            }
+
+        }
+        catch (ApiException e) {
+            Log(logger,"Error API: " + e.getMessage());
+        }
+        catch (IOException e) {
+            Log(logger,"Error IO: " + e.getMessage());
+        }
+
+        return logger.toString();
+    }
+
+    @RequestMapping("/listauthentications")
+    public String ListAuthentications() {
+
+        StringBuilder logger = new StringBuilder();
+        Log(logger, "Test Kube v" + version);
+
+        try {
+
+            ApiClient client = getClient(logger);
+            CoreV1Api apiInstance = new CoreV1Api();
+
+            System.out.println("Listing authentications");
             Iterator var2 = client.getAuthentications().values().iterator();
 
             Authentication auth;
             while (var2.hasNext()) {
                  auth = (Authentication)var2.next();
-                System.out.println(auth.toString());
+                Log(logger, auth.toString());
 
 
                 if (auth instanceof ApiKeyAuth)
                 {
                     ApiKeyAuth apiAuth = (ApiKeyAuth)auth;
-                    System.out.println(apiAuth.getLocation());
+                    Log(logger, apiAuth.getLocation());
                 }
-            }*/
-
-            //System.out.println("Listing configs");
-            //apiInstance.listNamespacedConfigMap("krakenprj", false, "true", null, null, null, 60, null, 60, false);
-
-
-            /*System.out.println("Listing namespaces");
-            //V1PodList list = apiInstance.listPodForAllNamespaces(null, null, null, null, null, null, null, null, null);
-            V1NamespaceList nslist = apiInstance.listNamespace(null, null, null, null, null, null, null, null, null);
-
-            for (V1Namespace item : nslist.getItems()) {
-                System.out.println(item.getMetadata().getName());
-            }*/
-
-            System.out.println("Listing pods");
-            //V1PodList list = apiInstance.listPodForAllNamespaces(null, null, null, null, null, null, null, null, null);
-            V1PodList list = apiInstance.listNamespacedPod("krakenprj", null, null, null, null, null, null, null, null, null);
-
-            for (V1Pod item : list.getItems()) {
-                message += item.getMetadata().getName();
             }
         }
+        catch (IOException e) {
+            Log(logger,"Error IO: " + e.getMessage());
+        }
+
+        return logger.toString();
+    }
+
+    @RequestMapping("/listconfig")
+    public String ListConfigMap() {
+
+        StringBuilder logger = new StringBuilder();
+        Log(logger, "Test Kube v" + version);
+
+        try {
+
+            ApiClient client = getClient(logger);
+            CoreV1Api apiInstance = new CoreV1Api();
+
+            Log(logger,"Listing Configs");
+            V1ConfigMapList nslist = apiInstance.listNamespacedConfigMap("krakenprj", null, null, null, null, null, null, null, null, null);
+
+            for (V1ConfigMap item : nslist.getItems()) {
+                Log(logger, "Config: " + item.getMetadata().getName());
+            }
+
+        }
         catch (ApiException e) {
-            message += "Error API trying to list pods: \r\n" + e.getMessage();
+            Log(logger,"Error API: " + e.getMessage());
         }
         catch (IOException e) {
-            message += "Error IO trying to list pods: \r\n" + e.getMessage();
+            Log(logger,"Error IO: " + e.getMessage());
         }
 
-        return message;
-
+        return logger.toString();
     }
 }
