@@ -21,7 +21,7 @@ import java.io.IOException;
 @RestController
 @EnableAutoConfiguration
 public class TestKube {
-    int version = 3;
+    int version = 4;
 
     @RequestMapping("/")
     public String Test() {
