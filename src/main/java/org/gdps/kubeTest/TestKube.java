@@ -31,14 +31,14 @@ public class TestKube {
 
     private void Log(StringBuilder logger, String logMessage)
     {
-        logger.append(logMessage + "\r\n");
+        logger.append(logMessage + "<br>");
     }
 
     private ApiClient getClient(StringBuilder logger) throws IOException{
         Log(logger,"Preparing Kubernetes client");
         //ApiClient client = Config.defaultClient();
-        //ApiClient client = Config.fromConfig("resources/kubeconfig.yaml");
-        ApiClient client = Config.fromCluster();
+        ApiClient client = Config.fromConfig("kubeconfig.yaml");
+        //ApiClient client = Config.fromCluster();
         //ApiClient client = Config.fromToken("https://api.us-west-2.online-starter.openshift.com:6443/apis/user.openshift.io/v1/users/~","Authorization: Bearer fTRF8_hYSN07rsx3M5Kh0x3VXK2u7__zZT961HcqUvE");
 
         ApiKeyAuth BearerToken = (ApiKeyAuth) client.getAuthentication("BearerToken");
@@ -64,9 +64,16 @@ public class TestKube {
             //V1PodList list = apiInstance.listPodForAllNamespaces(null, null, null, null, null, null, null, null, null);
             V1PodList list = apiInstance.listNamespacedPod("krakenprj", null, null, null, null, null, null, null, null, null);
 
+            Log(logger, "<table border=\"1px solid black\">");
+            Log(logger, "<TR><TH>Pod Name</TH><TH>Container</TH><TH>Status</TH></TR>");
+
             for (V1Pod item : list.getItems()) {
-                Log(logger, "Pod instance: " + item.getMetadata().getName());
+                for (V1ContainerStatus container : item.getStatus().getContainerStatuses()) {
+                    Log(logger, "<TR><TD>" + item.getMetadata().getName() + "</TD><TD>" + container.getName() + "</TD><TD>" + GetStateDescription(container.getState()) + "</TD></TR>");
+                }
             }
+            Log(logger, "</table>");
+
         }
         catch (ApiException e) {
             Log(logger,"Error API: " + e.getMessage());
@@ -78,8 +85,8 @@ public class TestKube {
         return logger.toString();
     }
 
-    @RequestMapping("/listpods2")
-    public String ListPods2() {
+    @RequestMapping("/listactivepods")
+    public String ListActivePods() {
 
         StringBuilder logger = new StringBuilder();
         Log(logger, "Test Kube v" + version);
@@ -91,11 +98,61 @@ public class TestKube {
 
             Log(logger,"Listing pods");
             //V1PodList list = apiInstance.listPodForAllNamespaces(null, null, null, null, null, null, null, null, null);
-            V1PodList list = apiInstance.listNamespacedPod("default", null, null, null, null, null, null, null, null, null);
+            V1PodList list = apiInstance.listNamespacedPod("krakenprj", null, null, null, null, null, null, null, null, null);
+
+            Log(logger, "<table border=\"1px solid black\">");
+            Log(logger, "<TR><TH>Pod Name</TH><TH>Container</TH><TH>Status</TH></TR>");
 
             for (V1Pod item : list.getItems()) {
-                Log(logger, "Pod instance: " + item.getMetadata().getName());
+                for (V1ContainerStatus container : item.getStatus().getContainerStatuses()) {
+                    if (container.getState().getRunning() != null) {
+                        Log(logger, "<TR><TD>" + item.getMetadata().getName() + "</TD><TD>" + container.getName() + "</TD><TD>" + GetStateDescription(container.getState()) + "</TD></TR>");
+                    }
+                }
             }
+
+            Log(logger, "</table>");
+        }
+        catch (ApiException e) {
+            Log(logger,"Error API: " + e.getMessage());
+        }
+        catch (IOException e) {
+            Log(logger,"Error IO: " + e.getMessage());
+        }
+
+        return logger.toString();
+    }
+
+    private String GetStateDescription(V1ContainerState state){
+        if (state.getRunning() != null)
+            return "Running";
+        else if(state.getWaiting() != null)
+            return "Waiting";
+        else if(state.getTerminated() != null)
+            return "Terminated";
+        else
+            return "Unknow";
+    }
+
+    @RequestMapping(value="killpod", method = RequestMethod.GET)
+    public String KillPod(@RequestParam("podName") String podName) {
+
+        StringBuilder logger = new StringBuilder();
+        Log(logger, "Test Kube v" + version);
+
+        try {
+
+            ApiClient client = getClient(logger);
+            CoreV1Api apiInstance = new CoreV1Api();
+
+            Log(logger,"Killing pods");
+
+            V1DeleteOptions options = new V1DeleteOptions();
+
+            V1Status result = apiInstance.deleteNamespacedPod (podName, "krakenprj", options,null, null, null, null, null);
+
+            Log(logger, "Kill pods result: " + result.getMessage());
+
         }
         catch (ApiException e) {
             Log(logger,"Error API: " + e.getMessage());
@@ -109,6 +166,8 @@ public class TestKube {
 
     @RequestMapping("/listnamespaces")
     public String ListNamespaces() {
+
+        //Currently forbiden
 
         StringBuilder logger = new StringBuilder();
         Log(logger, "Test Kube v" + version);
@@ -170,32 +229,4 @@ public class TestKube {
         return logger.toString();
     }
 
-    @RequestMapping("/listconfig")
-    public String ListConfigMap() {
-
-        StringBuilder logger = new StringBuilder();
-        Log(logger, "Test Kube v" + version);
-
-        try {
-
-            ApiClient client = getClient(logger);
-            CoreV1Api apiInstance = new CoreV1Api();
-
-            Log(logger,"Listing Configs");
-            V1ConfigMapList nslist = apiInstance.listNamespacedConfigMap("krakenprj", null, null, null, null, null, null, null, null, null);
-
-            for (V1ConfigMap item : nslist.getItems()) {
-                Log(logger, "Config: " + item.getMetadata().getName());
-            }
-
-        }
-        catch (ApiException e) {
-            Log(logger,"Error API: " + e.getMessage());
-        }
-        catch (IOException e) {
-            Log(logger,"Error IO: " + e.getMessage());
-        }
-
-        return logger.toString();
-    }
 }
