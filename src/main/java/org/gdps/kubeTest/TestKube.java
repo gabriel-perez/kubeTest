@@ -37,8 +37,8 @@ public class TestKube {
     private ApiClient getClient(StringBuilder logger) throws IOException{
         Log(logger,"Preparing Kubernetes client");
         //ApiClient client = Config.defaultClient();
-        ApiClient client = Config.fromConfig("kubeconfig.yaml");
-        //ApiClient client = Config.fromCluster();
+        //ApiClient client = Config.fromConfig("kubeconfig.yaml");
+        ApiClient client = Config.fromCluster();
         //ApiClient client = Config.fromToken("https://api.us-west-2.online-starter.openshift.com:6443/apis/user.openshift.io/v1/users/~","Authorization: Bearer fTRF8_hYSN07rsx3M5Kh0x3VXK2u7__zZT961HcqUvE");
 
         ApiKeyAuth BearerToken = (ApiKeyAuth) client.getAuthentication("BearerToken");
